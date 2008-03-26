@@ -6,7 +6,7 @@ use File::Spec;
 use CGI::Simple;
 use FormValidator::Assets;
 
-my $f = FormValidator::Assets->new( assets_dir => File::Spec->catfile($FindBin::Bin, 'assets', 'foobar') );
+my $f = FormValidator::Assets->new( assets_dir => File::Spec->catfile($FindBin::Bin, 'assets') );
 
 ok($f, 'object created successfully');
 isa_ok($f, 'FormValidator::Assets');
