@@ -10,8 +10,10 @@ use FormValidator::Assets;
 sub run_assets_test {
     my $assets_dir = shift || $FindBin::Bin;
     $assets_dir =~ s/\.t$//;
+    my $bundle = shift;
 
     my $f = FormValidator::Assets->new( assets_dir => $assets_dir );
+    $f = $f->bundle($bundle) if $bundle;
 
     filters {
         input => ['yaml'],
