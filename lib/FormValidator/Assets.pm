@@ -1,24 +1,34 @@
 package FormValidator::Assets;
 
 use Moose;
-use Path::Class qw/file dir/;
 use Digest::MD5 qw/md5_hex/;
+
+use FormValidator::Assets::Types;
 
 use FormValidator::Assets::Name;
 use FormValidator::Assets::Rule;
+use FormValidator::Assets::Bundle;
 
-our $VERSION = '0.01';
+use FormValidator::Assets::Result;
 
-has 'assets_dir' => ( is => 'rw', required => 1 );
+our $VERSION = '0.000001';
+
+has 'assets_dir' => (
+    is       => 'rw',
+    isa      => 'AssetsDir',
+    required => 1,
+    coerce   => 1,
+);
+
+has 'names'   => ( is => 'rw', default => sub { {} } );
+has 'rules'   => ( is => 'rw', default => sub { {} } );
+has 'bundles' => ( is => 'rw', default => sub { {} } );
 
 sub BUILD {
     my ($self, $args) = @_;
 
     confess "Directory $self->{assets_dir} does not exists"
         unless -e $self->assets_dir && -d _;
-
-    $self->{assets_dir} = Path::Class::Dir->new($self->assets_dir)
-        unless ref $self->assets_dir;
 
     $self->load_assets;
 }
@@ -89,23 +99,69 @@ sub setup_name {
     my ($self, $attr) = @_;
 
     my $name = FormValidator::Assets::Name->new($attr);
-    
+    $self->names->{ $name } = $name;
 }
 
 sub setup_rule {
     my ($self, $attr) = @_;
 
     my $rule = FormValidator::Assets::Rule->new($attr);
+    $self->rules->{ $rule } = $rule;
 }
 
 sub setup_bundle {
     my ($self, $attr) = @_;
 
-    
+    my $bundle = FormValidator::Assets::Bundle->new($attr);
+    $self->bundles->{ $bundle } = $bundle;
 }
 
 sub setup_isa {
     # orz
+}
+
+sub bundle {
+    my ($self, $bundle) = @_;
+
+    $bundle = $self->bundles->{ $bundle } or confess 'no such bundles';
+
+    $self->{bundle} = $bundle;
+    $self;
+}
+
+sub process {
+    my ($self, $q, @rest) = @_;
+
+    my $result = FormValidator::Assets::Result->new( input => $q );
+
+    my @params;
+    if ($self->{bundle}) {
+        @params = @{ $self->{bundle}->names };
+    }
+    else {
+        @params = $q->param;
+    }
+
+    for my $param (@params) {
+        my $name = $self->names->{$param} or next;
+
+        my $invalid;
+        for my $rule (@{ $name->rules }) {
+            $rule = $self->rules->{ $rule } or next;
+
+            my ($code, $params) = @{ $rule->process };
+            $invalid++ unless $rule->{process}->[0]->( $q->param($param),  );
+        }
+
+        if ($invalid) {
+            $result->invalid_fields->{ $param }++;
+        }
+        else {
+            $result->valid_fields->{ $param }++;
+        }
+    }
+
+    $result;
 }
 
 =head1 NAME
