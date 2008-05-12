@@ -1,1 +1,4 @@
-name 'foo';
+name 'bar';
+
+use_rules 'required';
+

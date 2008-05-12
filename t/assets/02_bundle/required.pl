@@ -1,0 +1,5 @@
+rule 'required';
+
+process {
+    !!shift;
+};
