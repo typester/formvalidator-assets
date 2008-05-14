@@ -1,4 +1,3 @@
 bundle 'foo_and_bar';
-
-names qw/foo bar/;
+fields qw/foo bar/;
 

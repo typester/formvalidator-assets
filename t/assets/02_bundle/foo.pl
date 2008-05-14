@@ -1,4 +1,3 @@
-name 'bar';
-
-use_rules 'required';
+field 'bar';
+use_rule 'required';
 

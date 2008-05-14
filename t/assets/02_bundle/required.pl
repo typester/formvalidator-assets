@@ -1,5 +1,5 @@
 rule 'required';
 
 process {
-    !!shift;
+    return defined $_[0] && length $_[0];
 };

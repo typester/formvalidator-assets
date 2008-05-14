@@ -1,8 +1,8 @@
-use inc::Module::Install;
+use inc::Module::Install 0.72;
 name 'FormValidator-Assets';
 all_from 'lib/FormValidator/Assets.pm';
 
-build_requires 'Test::More';
+test_requires 'Test::More';
 
 tests 't/*.t t/assets/*/*.t';
 use_test_base;

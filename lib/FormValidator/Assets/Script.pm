@@ -7,10 +7,6 @@ require Class::Data::Inheritable;
 sub import {
     my $caller = caller(0);
 
-    my @scalar = qw/name rule bundle/;
-    my @list   = qw/use_rules no_rules extends names/;
-    my @code   = qw/process/;
-
     {
         no strict 'refs';
         push @{"$caller\::ISA"}, 'Class::Data::Inheritable';
@@ -19,16 +15,40 @@ sub import {
         my $attr = $caller->attr;
         $attr->{class} = $caller;
 
-        for my $method (@scalar) {
-            *{"$caller\::$method"} = sub ($) { $attr->{$method} = shift };
+        # field method
+        {
+            *{"$caller\::field"} = sub ($) {
+                $attr->{field} = shift;
+            };
+
+            *{"$caller\::use_rule"} = sub ($;@) {
+                my ($rule_name, @args) = @_;
+                push @{ $attr->{rules} }, $rule_name;
+                push @{ $attr->{rule_args}{ $rule_name } }, @args;
+            };
+
+            *{"$caller\::use_filter"} = sub ($) {
+                push @{ $attr->{filters} }, shift;
+            }
         }
 
-        for my $method (@list) {
-            *{"$caller\::$method"} = sub (@) { push @{$attr->{$method}}, @_ };
+        # rule method
+        {
+            *{"$caller\::rule"}    = sub ($) { $attr->{rule} = shift };
+            *{"$caller\::process"} = sub (&) { $attr->{process} = shift };
+            *{"$caller\::message"} = sub ($) { $attr->{message} = shift };
         }
 
-        for my $method (@code) {
-            *{"$caller\::$method"} = sub (&;@) { $attr->{$method} = \@_ };
+        # filter method
+        {
+            *{"$caller\::filter"} = sub ($) { $attr->{filter} = shift };
+            # process
+        }
+
+        # bundle method
+        {
+            *{"$caller\::bundle"} = sub ($) { $attr->{bundle} = shift };
+            *{"$caller\::fields"} = sub (@) { $attr->{fields} = \@_ };
         }
 
         *{"$caller\::load"} = \&load;

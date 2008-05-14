@@ -1,2 +1,2 @@
-name 'bar';
+field 'bar';
 

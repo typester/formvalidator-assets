@@ -1,35 +1,37 @@
 package FormValidator::Assets;
+use 5.008001;
 
 use Moose;
+
 use Digest::MD5 qw/md5_hex/;
 
 use FormValidator::Assets::Types;
 
-use FormValidator::Assets::Name;
+use FormValidator::Assets::Field;
 use FormValidator::Assets::Rule;
+use FormValidator::Assets::Filter;
 use FormValidator::Assets::Bundle;
 
 use FormValidator::Assets::Result;
 
 our $VERSION = '0.000001';
 
-has 'assets_dir' => (
+has assets_dir => (
     is       => 'rw',
     isa      => 'AssetsDir',
     required => 1,
     coerce   => 1,
 );
 
-has 'names'   => ( is => 'rw', default => sub { {} } );
-has 'rules'   => ( is => 'rw', default => sub { {} } );
-has 'bundles' => ( is => 'rw', default => sub { {} } );
+has fields  => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+has rules   => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+has filters => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+has bundles => ( is => 'rw', isa => 'HashRef', default => sub { {} } );
+
+__PACKAGE__->meta->make_immutable;
 
 sub BUILD {
     my ($self, $args) = @_;
-
-    confess "Directory $self->{assets_dir} does not exists"
-        unless -e $self->assets_dir && -d _;
-
     $self->load_assets;
 }
 
@@ -68,7 +70,7 @@ sub load_perl {
         package $pkg;
         use FormValidator::Assets::Script;
 
-        $code
+        $code;
 
         1;
     };
@@ -80,26 +82,28 @@ sub load_perl {
 sub load_yaml {
     my ($self, $yaml) = @_;
 
-    
+    die; # TODO
 }
 
 sub setup {
     my ($self, $asset) = @_;
 
     my $attr = $asset->attr;
+    $attr->{context} = $self;
 
-    $self->setup_name($attr) if $attr->{name};
-    $self->setup_rule($attr) if $attr->{rule};
+    $self->setup_field($attr)  if $attr->{field};
+    $self->setup_rule($attr)   if $attr->{rule};
+    $self->setup_filter($attr) if $attr->{filter};
     $self->setup_bundle($attr) if $attr->{bundle};
 
     $self->setup_isa;
 }
 
-sub setup_name {
+sub setup_field {
     my ($self, $attr) = @_;
 
-    my $name = FormValidator::Assets::Name->new($attr);
-    $self->names->{ $name } = $name;
+    my $field = FormValidator::Assets::Field->new($attr);
+    $self->fields->{ $field } = $field;
 }
 
 sub setup_rule {
@@ -107,6 +111,12 @@ sub setup_rule {
 
     my $rule = FormValidator::Assets::Rule->new($attr);
     $self->rules->{ $rule } = $rule;
+}
+
+sub setup_filter {
+    my ($self, $attr) = @_;
+
+    my $filter = FormValidator::Assets::Filter->new($attr);
 }
 
 sub setup_bundle {
@@ -132,36 +142,8 @@ sub bundle {
 sub process {
     my ($self, $q, @rest) = @_;
 
-    my $result = FormValidator::Assets::Result->new( input => $q );
-
-    my @params;
-    if ($self->{bundle}) {
-        @params = @{ $self->{bundle}->names };
-    }
-    else {
-        @params = $q->param;
-    }
-
-    for my $param (@params) {
-        my $name = $self->names->{$param} or next;
-
-        my $invalid;
-        for my $rule (@{ $name->rules }) {
-            $rule = $self->rules->{ $rule } or next;
-
-            my ($code, $params) = @{ $rule->process };
-            $invalid++ unless $rule->{process}->[0]->( $q->param($param),  );
-        }
-
-        if ($invalid) {
-            $result->invalid_fields->{ $param }++;
-        }
-        else {
-            $result->valid_fields->{ $param }++;
-        }
-    }
-
-    $result;
+    my $result = FormValidator::Assets::Result->new( context => $self, input => $q );
+    $result->process( @rest );
 }
 
 =head1 NAME

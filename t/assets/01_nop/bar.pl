@@ -1,8 +1,8 @@
 # name
-name 'bar';
-use_rules 'bar';
+field 'bar';
+use_rule 'bar';
 
 # rule
 rule 'bar';
-process { 0 }
+process { 0 };
 

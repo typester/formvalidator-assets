@@ -1,16 +1,12 @@
 package FormValidator::Assets::Bundle;
 use Moose;
 
+extends 'FormValidator::Assets::Component';
+
 use overload q{""} => sub { shift->bundle };
 
 has 'bundle' => ( is => 'ro', required => 1 );
-has 'names'  => ( is => 'rw', default => sub { [] } );
-
-sub BUILD {
-    my ($self, $args) = @_;
-
-    
-}
+has 'fields' => ( is => 'rw', default => sub { [] } );
 
 1;
 
