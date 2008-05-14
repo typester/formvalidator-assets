@@ -21,6 +21,8 @@ has errors => (
     default => sub { {} },
 );
 
+__PACKAGE__->meta->make_immutable;
+
 sub BUILD {
     my ($self, $args) = @_;
 

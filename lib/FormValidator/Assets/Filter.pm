@@ -8,4 +8,6 @@ use overload q{""} => sub { shift->filter };
 has 'filter'  => ( is => 'ro', required => 1 );
 has 'process' => ( is => 'ro', required => 1 );
 
+__PACKAGE__->meta->make_immutable;
+
 1;

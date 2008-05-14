@@ -8,5 +8,7 @@ use overload q{""} => sub { shift->bundle };
 has 'bundle' => ( is => 'ro', required => 1 );
 has 'fields' => ( is => 'rw', default => sub { [] } );
 
+__PACKAGE__->meta->make_immutable;
+
 1;
 

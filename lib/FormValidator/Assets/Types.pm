@@ -14,6 +14,7 @@ coerce 'AssetsDir'
     => from 'ArrayRef'
        => via { Path::Class::Dir->new(@{ $_ }) };
 
+__PACKAGE__->meta->make_immutable;
 
 1;
 

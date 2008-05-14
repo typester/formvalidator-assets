@@ -10,4 +10,6 @@ has 'rules'     => ( is => 'rw', default => sub { [] } );
 has 'filters'   => ( is => 'rw', default => sub { [] } );
 has 'rule_args' => ( is => 'rw', default => sub { {} } );
 
+__PACKAGE__->meta->make_immutable;
+
 1;
