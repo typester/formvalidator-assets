@@ -152,8 +152,17 @@ FormValidator::Assets - Module abstract (<= 44 characters) goes here
 
 =head1 SYNOPSIS
 
-  use FormValidator::Assets;
-  blah blah blah
+    use FormValidator::Assets;
+    
+    my $f = FormValidator::Assets->new( assets_dir => $your_dir );
+    my $res = $f->process( CGI::Simple->new({ foo => 'bar' } );
+    
+    if ($res->has_error) {
+        # die $res->message('foo'); # not implemented yet
+    }
+    else {
+        print $res->valid('foo');
+    }
 
 =head1 DESCRIPTION
 
