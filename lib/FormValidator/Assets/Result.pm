@@ -34,7 +34,12 @@ sub BUILD {
         @params = $self->input->param;
     }
 
-    my %params = map { $_ => $self->input->param($_) || '' } @params;
+    my %params;
+    for my $p (@params) {
+        my @p = $self->input->param($p);
+        $params{$p} = @p > 1 ? \@p : $p[0];
+    }
+
     $self->params( \%params );
 }
 
@@ -76,7 +81,16 @@ sub apply_filters {
         my $field = $self->context->fields->{$p} or next;
 
         for my $filter (@{ $field->filters }) {
-            $self->params->{$p} = $filter->process->( $self->params->{$p}, $self, @_ );
+            my $data = $self->params->{$p};
+
+            if (ref $data eq 'ARRAY') {
+                for my $d (@$data) {
+                    $d = $filter->process->( $d, $self, @_ );
+                }
+            }
+            else {
+                $self->params->{$p} = $filter->process->( $self->params->{$p}, $self, @_ );
+            }
         }
     }
 }
@@ -91,9 +105,19 @@ sub check_rules {
             my $rule = $self->context->rules->{$rule_name} or next;
             my $args = $field->rule_args->{$rule} || [];
 
-            my $ok = $rule->process->( $self->params->{$p}, $args, $self, @_ );
+            my $fail;
+            my $data = $self->params->{$p};
+            if (ref $data eq 'ARRAY') {
+                for my $d (@$data) {
+                    my $ok = $rule->process->( $d, $args, $self, @_ );
+                    $fail++ unless $ok;
+                }
+            }
+            else {
+                $fail++ unless $rule->process->( $self->params->{$p}, $args, $self, @_ );
+            }
 
-            unless ($ok) {
+            if ($fail) {
                 $self->errors->{$p}{ $rule }++;
             }
         }
